@@ -1,7 +1,7 @@
 # ===========================================
 # Stage 1: Build
 # ===========================================
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ ARG NEXT_PUBLIC_API_URL=/api
 ARG NEXT_PUBLIC_APP_NAME=BookStore
 ARG NEXT_PUBLIC_APP_DESCRIPTION="Professional Vietnamese E-Commerce BookStore Platform"
 ARG NEXT_PUBLIC_VNPAY_ENABLED=false
-ARG API_PROXY_TARGET=https://bookstore-api-a1xl.onrender.com/api
+ARG API_PROXY_TARGET=http://backend-node:8080/api
 ARG APP_GIT_SHA=unknown
 ARG APP_VERSION=unknown
 
@@ -37,7 +37,7 @@ RUN npm run build
 # ===========================================
 # Stage 2: Runtime
 # ===========================================
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 WORKDIR /app
 
@@ -45,7 +45,7 @@ ARG NEXT_PUBLIC_API_URL=/api
 ARG NEXT_PUBLIC_APP_NAME=BookStore
 ARG NEXT_PUBLIC_APP_DESCRIPTION="Professional Vietnamese E-Commerce BookStore Platform"
 ARG NEXT_PUBLIC_VNPAY_ENABLED=false
-ARG API_PROXY_TARGET=https://bookstore-api-a1xl.onrender.com/api
+ARG API_PROXY_TARGET=http://backend-node:8080/api
 ARG APP_GIT_SHA=unknown
 ARG APP_VERSION=unknown
 

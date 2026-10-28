@@ -37,10 +37,16 @@ describe("api proxy target resolution", () => {
     ).toBe("https://bookstore-api-a1xl.onrender.com/api");
   });
 
-  it("uses the public demo backend when no proxy target is configured", () => {
+  it("keeps the Node.js fork on its local backend when no target is configured", () => {
     expect(resolveProxyTarget({})).toBe(
-      "https://bookstore-api-a1xl.onrender.com/api",
+      "http://127.0.0.1:8080/api",
     );
+  });
+
+  it("does not silently add an upstream production fallback to the Node.js backend", () => {
+    expect(resolveProxyTargets({ BACKEND_HOSTPORT: "backend-node:8080" })).toEqual([
+      "http://backend-node:8080/api",
+    ]);
   });
 
   it("normalizes missing api suffix", () => {

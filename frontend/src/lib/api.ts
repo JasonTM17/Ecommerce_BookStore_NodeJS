@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 
-/** Spring Boot serves APIs under `server.servlet.context-path=/api`. */
+/** The Node.js API preserves the original `/api` contract. */
 function normalizeApiBaseUrl(raw: string): string {
   const trimmed = raw.trim().replace(/\/+$/, "");
   if (trimmed.endsWith("/api")) {

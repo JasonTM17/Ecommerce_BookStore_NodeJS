@@ -1,4 +1,4 @@
-const FALLBACK_PROXY_TARGET = "https://bookstore-api-a1xl.onrender.com/api";
+const FALLBACK_PROXY_TARGET = "http://127.0.0.1:8080/api";
 const FALLBACK_PROXY_STATUSES = new Set([429, 502, 503, 504]);
 const PUBLIC_CACHEABLE_GET_PREFIXES = [
   "brands",
