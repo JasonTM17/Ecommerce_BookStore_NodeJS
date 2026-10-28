@@ -1,11 +1,7 @@
-name: CI/CD Pipeline
+name: Upstream Spring Boot Reference (manual only)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [master, develop]
-  pull_request:
-    branches: [master, develop]
 
 permissions:
   contents: read

@@ -8,6 +8,10 @@ playwright-report
 test-results
 uploads_data
 node_modules
+backend-node/node_modules
+backend-node/dist
+plans
+.env.node
 .next
 npm-debug.log
 .env.local
