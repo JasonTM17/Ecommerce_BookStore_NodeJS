@@ -33,3 +33,21 @@ successful payments, email delivery or AI results.
 The existing Render blueprint and Java CI describe the upstream application.
 They are not evidence of a deployed Node.js service. Vercel deployment of this
 fork is authorized and requires its own reviewed configuration and hosted checks.
+
+## Current free demo (2026-10-29)
+
+The Node API runs at https://bookstore-node-api.onrender.com/api with a dedicated
+Supabase PostgreSQL database and image bucket. The Vercel storefront at
+https://bookstore-node-web.vercel.app proxies `/api` to that Render API. The
+previous Neon `bookstore-node-db` was deleted at the user's explicit request
+after Supabase verification; it is no longer a dependency. Vercel's API deployment
+remains an alternative, rather than the active storefront target.
+
+Observed on Render: readiness/database UP, customer login, real catalog/cart,
+cash checkout, persisted owner read, anonymous order denial, admin image upload,
+public byte equality and object cleanup. The hosted checkout regression is also
+covered by16 real PostgreSQL integration tests with a one-connection pool.
+Exact backend commit542933c passed the Node GitHub CI run40799938964.
+Render Free sleeps after15 minutes without inbound traffic; cold requests can
+take longer. No paid capacity or artificial keepalive is configured. External
+SMTP/payment/AI providers remain outside this observed demo acceptance.
