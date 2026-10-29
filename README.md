@@ -39,3 +39,9 @@ SMTP, payment and AI integrations require their own provider credentials and liv
 ## Source and license
 
 Derived from [JasonTM17/Ecommerce_BookStore](https://github.com/JasonTM17/Ecommerce_BookStore) at `ba500398213fb977540a23a62b8f4e511585a8f6`. Original implementation and documentation remain recoverable through the preserved upstream history. See [LICENSE](LICENSE).
+
+## Expanded demo catalog
+
+Run `node backend-node/scripts/seed-catalog.cjs` after installing backend and frontend dependencies, with the dedicated Supabase database/Storage environment and `APP_CATALOG_SEED_CONFIRM=ADD_DEMO_CATALOG`. It adds50curated book records across6categories and creates original illustrative PNG covers using the frontend Sharp dependency. Prices, stock, offers and covers are demo fixtures; no commercial edition, publisher or ISBN is fabricated. Names/authors identify the referenced works. Existing products, stock, orders and accounts are preserved. Repeated runs skip matching title/author pairs under a transaction advisory lock. No schema synchronization or user seed is run.
+
+Current hosted fixture has55active books; catalog/search through the Vercel proxy was verified. New covers are in the dedicated Supabase public bucket under `demo-catalog/v1/`. Store server credentials only in a private environment, never in source. Font availability may affect illustrative cover rendering across operating systems.
