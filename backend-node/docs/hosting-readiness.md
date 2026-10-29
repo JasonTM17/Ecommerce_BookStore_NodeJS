@@ -186,3 +186,7 @@ Supabase pooler TLS requires the official provider CA. Set `DB_SSL_CA` to its PE
 `db:setup` now requires `DB_SETUP_CONFIRM_EMPTY=create-new-empty-schema`, connects with automatic synchronization disabled, checks that the application schema is empty, and only then creates the schema. It refuses to modify existing tables. The dedicated Supabase project was initialized once, its 33 application tables had RLS enabled and anon/authenticated direct grants revoked, and the existing-database refusal was observed live. Server PostgreSQL access remains available to the API.
 
 A deterministic demo catalog was inserted in the newly created isolated project using separately generated private account passwords. Runtime seeding remains disabled. No SMTP, payment or AI delivery success is inferred from those fixtures. Vercel and real browser acceptance remain separate release gates.
+
+## Single-connection checkout regression
+
+The first hosted checkout smoke found an HTTP 500 with the deliberately bounded one-connection pool. Pricing was queried through the default repository while the order transaction held that sole connection. The controller reproduced the old failure, then bound pricing and response mapping to the transaction EntityManager. All 16 PostgreSQL integration tests now pass with DB_POOL_MAX=1, including checkout, rollback and concurrent last-unit purchase. This is the hosted-runtime regression; the earlier larger-pool tests alone did not establish it.

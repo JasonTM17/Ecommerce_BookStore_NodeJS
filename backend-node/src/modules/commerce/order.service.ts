@@ -72,7 +72,7 @@ export class OrderService {
         .getMany();
       const byId = new Map(products.map((p) => [p.id, p]));
 
-      const pricingMap = await this.pricing.resolveAll(products);
+      const pricingMap = await this.pricing.resolveAll(products, em);
 
       const order = em.create(Order, {
         orderNumber: this.generateOrderNumber(),
@@ -137,7 +137,7 @@ export class OrderService {
         await em.delete(CartItem, { cart: { id: cart.id } });
       }
 
-      return this.mapToOrderResponse(await this.loadOrder(em, saved.id));
+      return this.mapToOrderResponse(await this.loadOrder(em, saved.id), undefined, em);
     });
   }
 
@@ -242,7 +242,7 @@ export class OrderService {
         }
       }
       await em.save(order);
-      return this.mapToOrderResponse(await this.loadOrder(em, order.id));
+      return this.mapToOrderResponse(await this.loadOrder(em, order.id), undefined, em);
     });
   }
 
@@ -330,10 +330,10 @@ export class OrderService {
     return Promise.all(orders.map((o) => this.mapToOrderResponse(o, pricingMap)));
   }
 
-  private async mapToOrderResponse(order: Order, pricingMap?: Map<number, any>) {
+  private async mapToOrderResponse(order: Order, pricingMap?: Map<number, any>, manager?: EntityManager) {
     const items = order.orderItems || [];
     if (!pricingMap) {
-      pricingMap = await this.pricing.resolveAll(items.map((i) => i.product));
+      pricingMap = await this.pricing.resolveAll(items.map((i) => i.product), manager);
     }
     return {
       id: order.id,

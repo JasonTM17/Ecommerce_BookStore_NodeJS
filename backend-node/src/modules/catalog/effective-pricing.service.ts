@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
+import { EntityManager, In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { FlashSale } from '../../entities/flash-sale.entity';
 import { Product } from '../../entities/product.entity';
 
@@ -31,7 +31,7 @@ export class EffectivePricingService {
     return map.get(product.id)!;
   }
 
-  async resolveAll(products: Iterable<Product>): Promise<Map<number, EffectiveProductPricing>> {
+  async resolveAll(products: Iterable<Product>, manager?: EntityManager): Promise<Map<number, EffectiveProductPricing>> {
     const candidates = [...products].filter((p) => p != null && p.id != null);
     const result = new Map<number, EffectiveProductPricing>();
     if (candidates.length === 0) return result;
@@ -39,7 +39,7 @@ export class EffectivePricingService {
     const now = new Date();
     const ids = [...new Set(candidates.map((p) => p.id))];
 
-    const activeSales = await this.flashSales.find({
+    const activeSales = await (manager?.getRepository(FlashSale) ?? this.flashSales).find({
       where: {
         product: { id: In(ids) },
         isActive: true,
