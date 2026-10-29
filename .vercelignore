@@ -1,0 +1,14 @@
+.git/
+plans/
+**/.env*
+**/node_modules/
+**/coverage/
+**/playwright-report/
+**/test-results/
+backend/target/
+.env.node
+**/.next/
+**/dist/
+backend/
+mobile/
+docs/portfolio/
