@@ -14,6 +14,8 @@ import {
   Phone,
   Search,
   Shield,
+  User,
+  Briefcase,
   UserCheck,
   UserX,
   Users,
@@ -74,9 +76,9 @@ interface PageResponse<T> {
 }
 
 const ROLE_STYLES: Record<string, string> = {
-  ADMIN: "bg-red-100 text-red-700",
-  MANAGER: "bg-purple-100 text-purple-700",
-  CUSTOMER: "bg-blue-100 text-blue-700",
+  ADMIN: "bg-purple-50 text-purple-700 border-purple-200/90",
+  MANAGER: "bg-amber-50 text-amber-800 border-amber-200/90",
+  CUSTOMER: "bg-sky-50 text-sky-700 border-sky-200/90",
 };
 
 const COPY = {
@@ -434,18 +436,26 @@ export default function AdminUsersPage() {
                       <TableCell>
                         <div className="flex flex-wrap gap-2">
                           {user.roles.map((role) => (
-                            <Badge
+                            <span
                               key={role}
                               className={cn(
-                                "font-medium",
-                                ROLE_STYLES[role] ||
-                                  "bg-gray-100 text-gray-700",
+                                "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold shadow-xs transition-colors",
+                                ROLE_STYLES[role] || "bg-gray-50 text-gray-700 border-gray-200",
                               )}
                             >
-                              {copy.roleLabels[
-                                role as keyof typeof copy.roleLabels
-                              ] || role}
-                            </Badge>
+                              {role === "ADMIN" ? (
+                                <Shield className="h-3.5 w-3.5 shrink-0 text-purple-600" />
+                              ) : role === "MANAGER" ? (
+                                <Briefcase className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                              ) : (
+                                <User className="h-3.5 w-3.5 shrink-0 text-sky-600" />
+                              )}
+                              <span>
+                                {copy.roleLabels[
+                                  role as keyof typeof copy.roleLabels
+                                ] || role}
+                              </span>
+                            </span>
                           ))}
                         </div>
                       </TableCell>
