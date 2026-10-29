@@ -73,7 +73,7 @@ const COPY: Record<
     orderNumber: "Mã đơn hàng",
     successInfo: "Thông tin đơn hàng",
     successEmail: (email?: string) =>
-      `Chúng tôi đã gửi email xác nhận đến ${email || "tài khoản của bạn"}.`,
+      `Đơn hàng đã được lưu cho ${email || "tài khoản của bạn"}.`,
     successOrders: 'Bạn có thể theo dõi đơn hàng trong mục "Đơn hàng của tôi".',
     successETA: "Dự kiến giao hàng: 3-5 ngày làm việc",
     viewOrders: "Xem đơn hàng",
@@ -139,7 +139,7 @@ const COPY: Record<
     orderNumber: "Order number",
     successInfo: "Order information",
     successEmail: (email?: string) =>
-      `We sent the order confirmation to ${email || "your account"}.`,
+      `Your order has been saved for ${email || "your account"}.`,
     successOrders: 'You can track this order in "My Orders".',
     successETA: "Estimated delivery: 3-5 business days",
     viewOrders: "View orders",
