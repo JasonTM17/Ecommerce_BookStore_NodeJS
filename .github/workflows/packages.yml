@@ -1,0 +1,113 @@
+name: Publish Node demo packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Node demo version (never overwrite a published version)
+        required: true
+        default: node-v0.1.0
+
+permissions:
+  contents: read
+
+concurrency:
+  group: node-package-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Validate version and exact-source CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^node-v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" > /dev/null; then
+            echo 'Version tag already exists; choose a new version.' >&2
+            exit 1
+          fi
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow node.yml --commit "$GITHUB_SHA" --status success --json conclusion > ci.json
+          node -e "if (!require('./ci.json').length) throw Error('Exact-source Node CI must succeed before publishing')"
+          echo "IMAGE_ROOT=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build API and storefront
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build -f Dockerfile.node --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" --label "org.opencontainers.image.revision=$GITHUB_SHA" --label "org.opencontainers.image.version=$VERSION" --label org.opencontainers.image.licenses=MIT -t "$IMAGE_ROOT/bookstore-node-api:$VERSION" .
+          docker build -f Dockerfile.frontend --build-arg "APP_GIT_SHA=$GITHUB_SHA" --build-arg "APP_VERSION=$VERSION" --build-arg API_PROXY_TARGET=http://backend-node:8080/api --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" --label "org.opencontainers.image.revision=$GITHUB_SHA" --label "org.opencontainers.image.version=$VERSION" --label org.opencontainers.image.licenses=MIT -t "$IMAGE_ROOT/bookstore-node-web:$VERSION" .
+      - name: Smoke both containers with real disposable PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_password=$(openssl rand -hex 24)
+          jwt_secret=$(openssl rand -hex 48)
+          echo "::add-mask::$db_password"
+          echo "::add-mask::$jwt_secret"
+          docker network create bookstore-release
+          docker run -d --name bookstore-release-db --network bookstore-release -e POSTGRES_DB=bookstore -e POSTGRES_USER=bookstore -e "POSTGRES_PASSWORD=$db_password" postgres:16-alpine
+          for i in $(seq 1 45); do
+            if docker exec bookstore-release-db pg_isready -U bookstore -d bookstore; then break; fi
+            sleep 2
+          done
+          docker run -d --name backend-node --network bookstore-release -p 127.0.0.1:38080:8080 -e DB_HOST=bookstore-release-db -e DB_NAME=bookstore -e DB_USERNAME=bookstore -e "DB_PASSWORD=$db_password" -e DB_SYNCHRONIZE=true -e "JWT_SECRET=$jwt_secret" -e GROK_ENABLED=false -e APP_DEMO_SEED_ENABLED=false "$IMAGE_ROOT/bookstore-node-api:$VERSION"
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:38080/api/health/ready > api-ready.json; then break; fi
+            sleep 2
+          done
+          node -e "const r=require('./api-ready.json');if(r.status!=='UP'||r.database!=='UP')throw Error('API/Postgres readiness failed')"
+          docker run -d --name bookstore-release-web --network bookstore-release -p 127.0.0.1:33000:3000 "$IMAGE_ROOT/bookstore-node-web:$VERSION"
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:33000/api/health > web-ready.json; then break; fi
+            sleep 2
+          done
+          node -e "const r=require('./web-ready.json');if(r.frontend?.status!=='UP'||r.backend?.status!=='UP'||r.frontend?.commit!==process.env.GITHUB_SHA)throw Error('Frontend/proxy/source readiness failed')"
+          curl -fsS http://127.0.0.1:33000/ > /dev/null
+          curl -fsS http://127.0.0.1:33000/api/products > proxied-products.json
+          node -e "if(!Array.isArray(require('./proxied-products.json').content))throw Error('Real API catalog proxy failed')"
+      - name: Publish versioned and source-addressed images
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in bookstore-node-api bookstore-node-web; do
+            image="$IMAGE_ROOT/$name"
+            docker tag "$image:$VERSION" "$image:sha-$GITHUB_SHA"
+            docker push "$image:$VERSION"
+            docker push "$image:sha-$GITHUB_SHA"
+            docker image inspect "$image:$VERSION" --format '{{index .RepoDigests 0}}' >> image-digests.txt
+          done
+          node - <<'NODE'
+          const fs=require('fs');
+          const images=fs.readFileSync('image-digests.txt','utf8').trim().split('\n');
+          if(images.length!==2||images.some(i=>!/@sha256:[a-f0-9]{64}$/.test(i)))throw Error('Missing registry digests');
+          fs.writeFileSync('release-manifest.json',JSON.stringify({version:process.env.VERSION,source:process.env.GITHUB_SHA,platform:'linux/amd64',images,smoke:'API + real PostgreSQL + frontend proxy',liveProviders:'not tested by container release'},null,2));
+          NODE
+          cat release-manifest.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload release manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: node-release-manifest
+          path: release-manifest.json
+          if-no-files-found: error
+      - name: Remove only this job's containers
+        if: always()
+        shell: bash
+        run: |
+          docker rm -fv bookstore-release-web backend-node bookstore-release-db 2>/dev/null || true
+          docker network rm bookstore-release 2>/dev/null || true

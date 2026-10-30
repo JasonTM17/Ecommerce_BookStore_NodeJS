@@ -91,6 +91,10 @@ Render Free có thể ngủ sau 15 phút không nhận truy cập; lần gọi A
 
 VNPay, gửi email SMTP và AI provider **chưa được xác minh hoạt động thật**; VNPay bị vô hiệu trong checkout khi chưa cấu hình. Các dòng “10.000+ đầu sách”, “10K+ yêu thích” ở trang chủ là nội dung mẫu, không phải số liệu đo được. Đây là bản demo portfolio; không khẳng định mọi tính năng đã sẵn sàng vận hành thương mại.
 
+## Docker package và release
+
+Hai image API và storefront sử dụng dòng phiên bản Node riêng `node-v0.1.0`. [Hướng dẫn package](docs/container-packages.md) có lệnh pull, cấu hình runtime, commit nguồn và cách đối chiếu digest. Tag `v1.x` cũ được giữ nguyên cho lịch sử Spring; không dùng làm bằng chứng phát hành Node.
+
 ## Cấu trúc và nguồn gốc
 
 - `backend-node/`: NestJS API đang sử dụng, entities, DTOs và kiểm thử.

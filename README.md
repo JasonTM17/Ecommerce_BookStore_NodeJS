@@ -131,6 +131,10 @@ Render Free can sleep after 15 minutes without inbound traffic; the first API re
 
 **VNPay, SMTP email delivery and live AI responses are not verified integrations in this demo.** VNPay is disabled in checkout until configured. Homepage marketing figures such as “10,000+” and “10K+ favorites” are template copy, not measured usage; the verified catalog count is 100. This is a portfolio demonstration, not a commercial storefront or a claim that every route is production-ready.
 
+## Container packages
+
+Versioned API and storefront Docker packages use the Node-specific `node-v0.1.0` release line. See [container packages and release verification](docs/container-packages.md) for pull commands, source labels, immutable digests and runtime configuration.
+
 ## Origin and license
 
 Converted from [JasonTM17/Ecommerce_BookStore](https://github.com/JasonTM17/Ecommerce_BookStore), preserving its genuine upstream history at `ba500398213fb977540a23a62b8f4e511585a8f6`. Spring Boot source and historical documentation remain as references; this fork's active backend is `backend-node/`. New work uses actual commit dates. [Migration notes](docs/node-migration.md) · [MIT license](LICENSE).
