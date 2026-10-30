@@ -6,3 +6,4 @@ uploads/
 !.env.example
 scripts/.test-db-env
 *.log
+.vercel

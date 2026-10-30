@@ -218,10 +218,11 @@ export class OrderService {
 
   async updateOrderStatus(orderId: number, newStatus: OrderStatus) {
     return this.dataSource.transaction(async (em) => {
-      const order = await em.findOne(Order, {
-        where: { id: orderId },
-        lock: { mode: 'pessimistic_write' },
-      });
+      const order = await em
+        .createQueryBuilder(Order, 'o')
+        .setLock('pessimistic_write')
+        .where('o.id = :id', { id: orderId })
+        .getOne();
       if (!order) throw new ResourceNotFoundException('Order', 'id', orderId);
 
       order.orderStatus = newStatus;
@@ -231,10 +232,11 @@ export class OrderService {
         order.cancelledAt = new Date();
         const fullOrder = await this.loadOrder(em, order.id);
         for (const item of fullOrder.orderItems || []) {
-          const product = await em.findOne(Product, {
-            where: { id: item.product.id },
-            lock: { mode: 'pessimistic_write' },
-          });
+          const product = await em
+            .createQueryBuilder(Product, 'p')
+            .setLock('pessimistic_write')
+            .where('p.id = :id', { id: item.product.id })
+            .getOne();
           if (product?.isActive) {
             product.stockQuantity += item.quantity;
             await em.save(product);
