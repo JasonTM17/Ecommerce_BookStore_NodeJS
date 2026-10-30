@@ -24,6 +24,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiResponse } from '../../common/dto/api-response.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../entities/enums';
 import { User } from '../../entities/user.entity';
@@ -75,6 +76,7 @@ export class CouponController {
     return ApiResponse.success(await this.couponService.getAll(Number(page), Number(size)));
   }
 
+  @Public()
   @Get('available')
   async getAvailableCoupons() {
     return ApiResponse.success(await this.couponService.getAvailable());

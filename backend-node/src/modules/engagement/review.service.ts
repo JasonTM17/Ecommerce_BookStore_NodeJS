@@ -27,12 +27,12 @@ export class ReviewService {
   async getProductReviews(productId: number, page: number, size: number): Promise<PageResponse<unknown>> {
     const [items, total] = await this.reviews.findAndCount({
       where: { product: { id: productId }, isApproved: true, isHidden: false },
-      relations: ['user'],
+      relations: ['user', 'product'],
       order: { createdAt: 'DESC' },
       skip: page * size,
       take: size,
     });
-    return toPageResponse(items.map((r) => this.toResponse(r)), total, page, size);
+    return toPageResponse(items.map((r) => this.toResponse(r, productId)), total, page, size);
   }
 
   async createReview(user: User, request: { productId: number; rating: number; comment?: string; sortOrder?: number }) {
@@ -84,11 +84,11 @@ export class ReviewService {
     await this.productService.refreshRating(productId);
   }
 
-  private toResponse(review: Review) {
+  private toResponse(review: Review, defaultProductId?: number) {
     return {
       id: review.id,
       user: toReviewUserResponse(review.user),
-      productId: review.product.id,
+      productId: review.product?.id ?? defaultProductId,
       rating: review.rating,
       comment: review.comment,
       isVerifiedPurchase: review.isVerifiedPurchase,
