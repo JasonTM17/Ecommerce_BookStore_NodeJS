@@ -1,47 +1,136 @@
-# BookStore — Node.js Full Stack
+# BookStore · Node.js Full Stack
 
-A NestJS/TypeScript conversion of the BookStore commerce backend, paired with the existing Next.js storefront and admin interface. This fork retains the genuine upstream Git history; its Node.js work uses actual implementation dates.
+A book commerce portfolio with a **NestJS API, Next.js storefront and admin dashboard**, backed by PostgreSQL and Supabase Storage. Browse books, search the catalog, manage a cart and place a demo cash-on-delivery order that is actually persisted.
 
-The Spring Boot source remains in `backend/` as a reference. The Node.js API lives in `backend-node/`. Historical Spring/Render screenshots, workflows and deployment reports are upstream evidence; they do not establish a working Node.js deployment.
+[![Node CI](https://github.com/JasonTM17/Ecommerce_BookStore_NodeJS/actions/workflows/node.yml/badge.svg?branch=main)](https://github.com/JasonTM17/Ecommerce_BookStore_NodeJS/actions/workflows/node.yml)
+[![Live demo](https://img.shields.io/badge/Live_demo-Vercel-black?logo=vercel)](https://bookstore-node-web.vercel.app/)
+[![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## Stack and scope
+**[Open the demo](https://bookstore-node-web.vercel.app/)** · [Tiếng Việt](README_VN.md) · [Production check](docs/production-check.md) · [API route inventory](backend-node/docs/api-parity.md)
 
-| Component | Implementation |
+![BookStore production storefront](docs/portfolio/node-production/home-desktop.jpg)
+
+## See the shopping flow
+
+Real production browser captures: **catalog → search → book details → cart → COD checkout → saved order → order history**. The GIF uses captured keyframes with edited pacing; it is not a loading-speed benchmark. The checkout shown uses a synthetic demo account and does not involve a real payment or shipment.
+
+![BookStore shopping walkthrough](docs/portfolio/node-production/shopping-walkthrough.gif)
+
+## Screens
+
+| Live catalog | Book details |
 | --- | --- |
-| API | Node.js 24, NestJS 11, TypeScript, TypeORM |
-| Web | Next.js 16, React 19, Tailwind CSS, TanStack Query, Zustand |
-| Persistence | PostgreSQL; dedicated Supabase database and image storage for hosting |
-| Authentication | JWT access/refresh flows, bcrypt password hashing, role and ownership checks |
-| Commerce | Catalog, cart, server-side pricing, checkout, inventory, orders, coupons and flash sales |
-| Verification | Jest, PostgreSQL integration tests, Vitest, Playwright, dependency audit |
-| Delivery | Isolated Docker Compose, Node CI, Vercel preparation |
+| ![Catalog with original illustrative book covers](docs/portfolio/node-production/catalog-desktop.jpg) | ![Book detail with price and stock](docs/portfolio/node-production/book-detail-desktop.jpg) |
 
-The [route inventory](backend-node/docs/api-parity.md) distinguishes HTTP-tested behavior, unit tests and source-only implementation. A registered handler is not automatically proof of runtime parity. The [migration notes](docs/node-migration.md) describe origin, API compatibility and verification boundaries.
+| Flash sale | Admin dashboard |
+| --- | --- |
+| ![Flash sale using API data](docs/portfolio/node-production/flash-sale-desktop.jpg) | ![Authenticated demo admin dashboard](docs/portfolio/node-production/admin-dashboard-desktop.jpg) |
 
-## Local development
+<details>
+<summary>Mobile layout and persisted checkout</summary>
 
-Copy `.env.node.example` to `.env.node` and replace both example values with generated local secrets. Do not commit the resulting file.
+<p>
+  <img src="docs/portfolio/node-production/catalog-mobile.jpg" alt="Catalog checked at a 390px viewport" width="260" />
+  <img src="docs/portfolio/node-production/book-detail-mobile.jpg" alt="Book details checked at a 390px viewport" width="260" />
+</p>
+
+![Demo order persisted and shown in order history](docs/portfolio/node-production/orders-desktop.jpg)
+
+</details>
+
+Captured on **30 October 2026** from the deployed Node.js application. Prices, stock, coupons, reviews and sales counters in the demo dataset are illustrative, not commercial activity. [Asset provenance and regeneration](docs/portfolio/README.md).
+
+## Features and engineering
+
+- **Catalog:** search, categories, publisher filters, sorting, pagination, stock and related books. The live API returned **100 active products** during the latest check.
+- **Customer journey:** login, persistent cart, server-calculated checkout totals, cash-on-delivery orders and owner-scoped order reads.
+- **Authentication:** JWT access tokens, refresh-token rotation, bcrypt password hashing and role-based access control for customer, manager and admin routes.
+- **Checkout consistency:** database transactions, pessimistic product locks and conditional stock updates; pricing uses the same transaction manager to avoid exhausting a small connection pool.
+- **Administration:** dashboard, product/inventory screens, orders and users. Customer access to the admin orders API was denied with HTTP 403 in the live check.
+- **Media:** dedicated Supabase Storage with MIME, size and upload-role validation. Original illustrative catalog covers are clearly described as demo artwork.
+- **Verification:** unit tests, PostgreSQL integration regressions, frontend tests and CI. The route inventory distinguishes HTTP-tested routes from source-only implementations.
+
+## Stack
+
+| Layer | Technologies |
+| --- | --- |
+| Web | Next.js 16, React 19, TypeScript, Tailwind CSS |
+| Client state | TanStack Query, Zustand |
+| API | Node.js 24, NestJS 11, TypeORM 0.3, OpenAPI |
+| Data and media | PostgreSQL, Supabase Database and Storage |
+| Tests | Jest, real PostgreSQL integration tests, Vitest, Playwright |
+| Deployment | Vercel storefront, Render Free Docker API, GitHub Actions |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Visitor[Customer or administrator] --> Web[Next.js on Vercel]
+    Web -->|Same-origin /api proxy| API[NestJS on Render Free]
+    API -->|TLS| DB[(Dedicated Supabase PostgreSQL)]
+    API -->|Server-side upload authorization| Storage[Supabase Storage]
+    Web -->|Public cover images| Storage
+```
+
+The browser uses `/api`; Vercel forwards requests to the Node API. Database and Storage service credentials stay on the server. The hosted runtime disables schema synchronization.
+
+## Run locally
+
+Requirements: Docker with Compose. Copy the example environment file and replace both example values with generated local secrets:
 
 ```sh
+cp .env.node.example .env.node
+# Edit .env.node before starting the stack.
 docker compose --env-file .env.node -f docker-compose.node.yml up --build
 ```
 
-The isolated stack exposes the storefront on port 3008 and the Node API on port 8088. Database synchronization is enabled only for this disposable local stack. Hosted runtime must use explicit schema setup/migrations and keep synchronization disabled.
+- Storefront: `http://localhost:3008`
+- Node API: `http://localhost:8088/api`
+- Swagger: `http://localhost:8088/api/docs`
 
-For separate processes, use the commands and environment reference in [backend-node/README.md](backend-node/README.md). The storefront proxy requires an explicit Node API target outside the local default; it does not silently call the original Spring service.
+The Compose database is a separate disposable local instance; schema synchronization is enabled only there. The stack does not automatically populate the hosted catalog. See the [backend guide](backend-node/README.md) for manual development, explicit schema setup, environment variables and demo seeding. Keep all `.env` files and demo passwords out of Git.
 
-## Quality and hosting evidence
+## Verify changes
 
-Controller-observed frontend checks on 2026-10-28: lint, production build and 151 unit tests passed. Backend conversion, hosted runtime, persistent database/storage and representative commerce journeys have separate gates. Their live acceptance is still pending; no hosted Node service is asserted by this README yet.
+```sh
+cd backend-node
+npm ci
+npm run typecheck
+npm test -- --runInBand
+npm run build
+# With the disposable test database configured:
+npm run docker:db:up
+npm run test:integration
+```
 
-SMTP, payment and AI integrations require their own provider credentials and live checks. Disabled or unconfigured providers must report their availability accurately. PostgreSQL is the observed integration target; MySQL compatibility requires separate execution evidence.
+```sh
+cd frontend
+npm ci
+npm run lint
+npm run test:run
+npm run build
+```
 
-## Source and license
+[Node CI](https://github.com/JasonTM17/Ecommerce_BookStore_NodeJS/actions/workflows/node.yml) runs backend typecheck/tests/build and frontend lint/tests/build. PostgreSQL integration tests and authenticated production checks are separate evidence; a green build does not establish every live feature. See the [dated production report](docs/production-check.md) for scope and limitations.
 
-Derived from [JasonTM17/Ecommerce_BookStore](https://github.com/JasonTM17/Ecommerce_BookStore) at `ba500398213fb977540a23a62b8f4e511585a8f6`. Original implementation and documentation remain recoverable through the preserved upstream history. See [LICENSE](LICENSE).
+## Repository map
 
-## Expanded demo catalog
+```text
+backend-node/       NestJS API, entities, DTOs, tests and environment example
+frontend/           Next.js storefront, customer account and admin interface
+backend/            Preserved Spring Boot reference implementation
+mobile/             Existing mobile workspace; not part of this web acceptance
+scripts/            Operations helpers and showcase GIF encoder
+docs/portfolio/     Production screenshots, GIF and capture notes
+docker-compose.node.yml   Isolated local Node.js stack
+```
 
-Run `node backend-node/scripts/seed-catalog.cjs` after installing backend and frontend dependencies, with the dedicated Supabase database/Storage environment and `APP_CATALOG_SEED_CONFIRM=ADD_DEMO_CATALOG`. It adds50curated book records across6categories and creates original illustrative PNG covers using the frontend Sharp dependency. Prices, stock, offers and covers are demo fixtures; no commercial edition, publisher or ISBN is fabricated. Names/authors identify the referenced works. Existing products, stock, orders and accounts are preserved. Repeated runs skip matching title/author pairs under a transaction advisory lock. No schema synchronization or user seed is run.
+## Demo boundaries
 
-Current hosted fixture has55active books; catalog/search through the Vercel proxy was verified. New covers are in the dedicated Supabase public bucket under `demo-catalog/v1/`. Store server credentials only in a private environment, never in source. Font availability may affect illustrative cover rendering across operating systems.
+Render Free can sleep after 15 minutes without inbound traffic; the first API request may be slow. Public storefront helpers can show fixture data when an API request fails, times out or returns an empty collection. A visible product card alone is therefore not proof of database connectivity.
+
+**VNPay, SMTP email delivery and live AI responses are not verified integrations in this demo.** VNPay is disabled in checkout until configured. Homepage marketing figures such as “10,000+” and “10K+ favorites” are template copy, not measured usage; the verified catalog count is 100. This is a portfolio demonstration, not a commercial storefront or a claim that every route is production-ready.
+
+## Origin and license
+
+Converted from [JasonTM17/Ecommerce_BookStore](https://github.com/JasonTM17/Ecommerce_BookStore), preserving its genuine upstream history at `ba500398213fb977540a23a62b8f4e511585a8f6`. Spring Boot source and historical documentation remain as references; this fork's active backend is `backend-node/`. New work uses actual commit dates. [Migration notes](docs/node-migration.md) · [MIT license](LICENSE).
