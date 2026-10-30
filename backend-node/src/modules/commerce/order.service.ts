@@ -220,7 +220,6 @@ export class OrderService {
     return this.dataSource.transaction(async (em) => {
       const order = await em.findOne(Order, {
         where: { id: orderId },
-        relations: ['orderItems', 'orderItems.product', 'user'],
         lock: { mode: 'pessimistic_write' },
       });
       if (!order) throw new ResourceNotFoundException('Order', 'id', orderId);
@@ -230,7 +229,8 @@ export class OrderService {
         order.deliveredAt = new Date();
       } else if (newStatus === OrderStatus.CANCELLED) {
         order.cancelledAt = new Date();
-        for (const item of order.orderItems) {
+        const fullOrder = await this.loadOrder(em, order.id);
+        for (const item of fullOrder.orderItems || []) {
           const product = await em.findOne(Product, {
             where: { id: item.product.id },
             lock: { mode: 'pessimistic_write' },
